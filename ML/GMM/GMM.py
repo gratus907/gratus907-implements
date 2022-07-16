@@ -1,28 +1,30 @@
 from scipy.stats import multivariate_normal
-import numpy as np 
+import numpy as np
 
-class Gaussian: 
-    def __init__(self, mean = np.ones((2)), covariance = np.eye(2), dim = 2):
+
+class Gaussian:
+    def __init__(self, mean=np.ones((2)), covariance=np.eye(2), dim=2):
         self.mean, self.covariance = mean, covariance
 
     def __call__(self, x):
         return multivariate_normal.pdf(x, mean=self.mean, cov=self.covariance)
-    
+
+
 class GMM():
     def __init__(self, k, dim):
-        init_mu = [np.random.random((dim))-0.5 for i in range(k)]
+        init_mu = [np.random.random(dim) - 0.5 for i in range(k)]
         init_sigma = [np.eye(dim) for i in range(k)]
         self.Gaussians = [Gaussian(init_mu[i], init_sigma[i], dim) for i in range(k)]
-        self.pi = np.ones((k)) / k
+        self.pi = np.ones(k) / k
         self.data = []
-        self.K = k 
+        self.K = k
         self.N = 0
         self.dim = dim
-    
+
     def add_data(self, x):
         self.data.append(x)
         self.N += 1
-    
+
     def prob(self, x_idx, g_idx):
         return self.Gaussians[g_idx](self.data[x_idx])
 
@@ -39,7 +41,7 @@ class GMM():
         self.pi = self.z.sum(axis=0)
         self.pi = self.pi / self.pi.sum()
         for j in range(self.K):
-            mean_vector = np.zeros((self.dim))
+            mean_vector = np.zeros(self.dim)
             for i in range(self.N):
                 mean_vector += self.z[i, j] * self.data[i]
             mean_vector /= self.z[:, j].sum()
@@ -49,10 +51,10 @@ class GMM():
                 cov_mat += self.z[i, j] * np.outer((self.data[i] - mean_vector), (self.data[i] - mean_vector))
             cov_mat /= self.z[:, j].sum()
             self.Gaussians[j].covariance = cov_mat
-    
+
     def log_likelihood(self):
         return round(sum([np.log(sum([g(x) * self.pi[j] for (j, g) in enumerate(self.Gaussians)])) for (i, x) in enumerate(self.data)]), 2)
-        
+
     def print_result(self):
         for g in self.Gaussians:
             print(f"Gaussian mu = {g.mean.round(2)}\n         S = {np.array2string(g.covariance.round(2), prefix='         S = ')}")
@@ -77,4 +79,3 @@ if __name__ == '__main__':
         gmm.M_step()
         print(f"Likelihood = {gmm.log_likelihood()}")
         gmm.print_result()
-        
